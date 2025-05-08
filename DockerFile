@@ -1,0 +1,28 @@
+FROM moveit/moveit2:main-humble-tutorial-source
+
+# Instalar dependencias necesarias para UR ROS 2 Driver
+RUN apt-get update && apt-get install -y \
+    ros-humble-joint-state-publisher-gui \
+    ros-humble-ros2-control \
+    ros-humble-ros2-controllers \
+    ros-humble-position-controllers \
+    ros-humble-force-torque-sensor-broadcaster \
+    ros-humble-tricycle-controller \
+    ros-humble-controller-manager \
+    ros-humble-hardware-interface \
+    ros-humble-forward-command-controller \
+    git \
+    python3-colcon-common-extensions \
+    && rm -rf /var/lib/apt/lists/*
+
+# Clonar el driver de Universal Robots ROS 2
+WORKDIR /ws/src
+RUN git clone -b humble https://github.com/UniversalRobots/Universal_Robots_ROS2_Driver.git
+#RUN git clone -b humble https://github.com/UniversalRobots/Universal_Robots_ExternalControl_URCap.git
+
+# Construir el workspace
+WORKDIR /ws
+RUN . /opt/ros/humble/setup.sh && colcon build --symlink-install
+
+# Definir el entorno por defecto
+CMD ["/bin/bash"]

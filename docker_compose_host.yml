@@ -1,0 +1,80 @@
+networks:
+  ur_network:
+    name: ur_network
+    #driver: bridge
+    ipam:
+      config:
+        - subnet: 192.168.56.0/24
+
+services:
+  cpu:
+    image: ros2_moveit_ur:${DOCKER_IMAGE}
+    container_name: moveit2_ur_cpu
+    privileged: true
+    networks:
+      ur_network:
+        ipv4_address: 192.168.56.103
+    command: /bin/bash
+    volumes:
+      - /tmp/.X11-unix:/tmp/.X11-unix
+      - $XAUTHORITY:/root/.Xauthority
+    environment:
+      QT_X11_NO_MITSHM: 1
+      DISPLAY: $DISPLAY
+
+  gpu:
+    image: ros2_moveit_ur:${DOCKER_IMAGE}
+    container_name: moveit2_ur
+    privileged: true
+    networks:
+      ur_network:
+        ipv4_address: 192.168.56.102
+    #ports:
+    expose:
+      - "50001-50004:50001-50004" # urcap - external control
+    #  #- "6080:6080" # Web interface
+    #  - "29999:29999" # URSim Dashboard Server
+    #  - "30001-30004:30001-30004" # URSim Primary/Secondary/RTDE interfaces
+    command: /bin/bash
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    volumes:
+      - /tmp/.X11-unix:/tmp/.X11-unix
+      - $XAUTHORITY:/root/.Xauthority
+    environment:
+      ROBOT_IP : 192.168.56.101
+      LAUNCH_RVIZ : true
+      QT_X11_NO_MITSHM: 1
+      DISPLAY: $DISPLAY
+      NVIDIA_VISIBLE_DEVICES: all
+      NVIDIA_DRIVER_CAPABILITIES: all
+      #ROS_DOMAIN_ID=0
+      
+
+  ursim:
+    image: jcorredorc/ursim_cb3:external_control
+    command: tail -f /dev/null
+    container_name: ursim_container
+    privileged: true
+    networks:
+      ur_network:
+        ipv4_address: 192.168.56.101
+    ports:
+      #- "50001-50002:50001-50002" # urcap - external control
+      - "5900:5900" # VNC
+      - "6080:6080" # Web interface
+      #- "29999:29999" # URSim Dashboard Server
+      #- "30001-30004:30001-30004" # URSim Primary/Secondary/RTDE interfaces
+    #environment:
+    #  DISPLAY: $DISPLAY
+    environment:
+      - ROBOT_MODEL=UR3
+    volumes:
+    #  - /tmp/.X11-unix:/tmp/.X11-unix
+    #  - $XAUTHORITY:/root/.Xauthority
+      - ${HOME}/docker/ursim/programs:/ursim/programs

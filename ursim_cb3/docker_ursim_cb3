@@ -1,0 +1,10 @@
+FROM universalrobots/ursim_cb3
+
+# install network tools
+RUN apt-get update && apt-get install -y \
+    telnetd \
+    iputils-ping \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install the URCap
+COPY externalcontrol-1.0.5.urcap /urcaps/externalcontrol-1.0.5.jar
